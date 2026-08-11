@@ -1,0 +1,18 @@
+# Environment variables
+.env
+.env.*
+
+# Air temporary files
+tmp/
+
+# Go binaries
+*.exe
+*.out
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
