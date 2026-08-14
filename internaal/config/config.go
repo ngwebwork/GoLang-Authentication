@@ -14,7 +14,7 @@ type Config struct {
 	JWTSecret   string
 }
 
-func load() (Config, error) {
+func Load() (Config, error) {
 	_ = godotenv.Load()
 	cfg := Config{
 		MongoURI:    strings.TrimSpace(os.Getenv("MONGO_URI")),

@@ -5,11 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go/token"
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,7 +48,7 @@ func (s *Service) Register(ctx context.Context,input RegisterInput) (AuthResult,
 		return AuthResult{}, errors.New("Email Already existed ")
 	}
 
-	if err != nil && !errors.Is(err, mongo.ErrNilDocument){
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments){
 		return AuthResult{}, err
 	}
 	hashByte, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
@@ -79,5 +78,7 @@ func (s *Service) Register(ctx context.Context,input RegisterInput) (AuthResult,
 	return AuthResult{
 		Token: token,
 		User: ToPublic(created),
-	}, nil
+	}, nil	
 }
+
+
