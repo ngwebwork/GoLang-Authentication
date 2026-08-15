@@ -25,21 +25,25 @@ type RegisterInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-
-type AuthResult struct{
-	Token string `json:"token"`
-	User PublicUser `json:"user"`
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (s *Service) Register(ctx context.Context,input RegisterInput) (AuthResult, error){
+type AuthResult struct {
+	Token string     `json:"token"`
+	User  PublicUser `json:"user"`
+}
+
+func (s *Service) Register(ctx context.Context, input RegisterInput) (AuthResult, error) {
 	email := strings.ToLower(strings.TrimSpace(input.Email))
 	pass := strings.ToLower(strings.TrimSpace(input.Password))
 
-	if email =="" || pass == "" {
-		return  AuthResult{}, errors.New("Email and password are required")
+	if email == "" || pass == "" {
+		return AuthResult{}, errors.New("Email and password are required")
 	}
 
-	if len(pass) < 6{
+	if len(pass) < 6 {
 		return AuthResult{}, errors.New("Password must be at least 6 char Long ")
 	}
 
@@ -48,37 +52,69 @@ func (s *Service) Register(ctx context.Context,input RegisterInput) (AuthResult,
 		return AuthResult{}, errors.New("Email Already existed ")
 	}
 
-	if err != nil && !errors.Is(err, mongo.ErrNoDocuments){
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return AuthResult{}, err
 	}
 	hashByte, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		return AuthResult{}, fmt.Errorf("Hashing of password failed: %w",err)
+		return AuthResult{}, fmt.Errorf("Hashing of password failed: %w", err)
 	}
 
 	now := time.Now().UTC()
 
 	u := User{
-		Email: email,
+		Email:        email,
 		PasswordHash: string(hashByte),
-		Role: "user",
-		createdAt: now,
-		UpdatedAt: now,
+		Role:         "user",
+		createdAt:    now,
+		UpdatedAt:    now,
 	}
 	created, err := s.repo.Create(ctx, u)
-	if err != nil{
+	if err != nil {
 		return AuthResult{}, err
 	}
 
 	token, err := auth.CreateToken(s.jwtSecret, created.ID.Hex(), created.Role)
-		if err != nil{
+	if err != nil {
 		return AuthResult{}, err
 	}
 
 	return AuthResult{
 		Token: token,
-		User: ToPublic(created),
-	}, nil	
+		User:  ToPublic(created),
+	}, nil
 }
 
+func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, error) {
+	email := strings.ToLower(strings.TrimSpace(input.Email))
+	pass := strings.ToLower(strings.TrimSpace(input.Password))
 
+	if email == "" || pass == "" {
+		return AuthResult{}, errors.New("Email and password are required")
+	}
+
+	if len(pass) < 6 {
+		return AuthResult{}, errors.New("Password must be atleast 6 char Long")
+	}
+
+	u, err := s.repo.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return AuthResult{}, errors.New("Invalid Credential")
+		}
+		return AuthResult{}, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(pass)); err != nil {
+		return AuthResult{}, errors.New("Invalid Credential! ")
+	}
+
+	token,err := auth.CreateToken(s.jwtSecret, u.ID.Hex(), u.Role)
+	if err != nil{
+		return AuthResult{}, err
+	}
+	return AuthResult{
+		Token: token,
+		User: ToPublic(u),
+	}, nil
+}

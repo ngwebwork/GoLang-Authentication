@@ -17,6 +17,7 @@ func NewRouter(a *app.App) *gin.Engine {
 	userSvc := user.NewServices(userRepo, a.Config.JWTSecret)
 	userhandler := user.NewHandler(userSvc)
 	r.POST("/register", userhandler.Register)
+	r.POST("/login", userhandler.Login)
 	return r
 }
 
