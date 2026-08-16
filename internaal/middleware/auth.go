@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"Authentication/internaal/auth"
 	"net/http"
 	"strings"
 
@@ -44,6 +45,35 @@ func AutRequired(jwtSecret string) gin.HandlerFunc {
 			})
 			return
 		}
+		claims, err := auth.ParseToken(jwtSecret, tokenString)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid or Expired toten",
+			})
+			return
+		}
 
+		c.Set(ctxUserIDKey, claims.Subject)
+		c.Set(ctxRoleKey, claims.Role)
+
+		c.Next()
 	}
+}
+
+func GetUserID(c *gin.Context) (string, bool) {
+	res, ok := c.Get(ctxUserIDKey)
+	if !ok {
+		return "", false
+	}
+	userID, ok := res.(string)
+	return userID, ok
+}
+
+func GetRole(c *gin.Context) (string, bool) {
+	res, ok := c.Get(ctxRoleKey)
+	if !ok {
+		return "", false
+	}
+	role, ok := res.(string)
+	return role, ok
 }

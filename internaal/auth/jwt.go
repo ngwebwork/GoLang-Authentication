@@ -53,7 +53,6 @@ func ParseToken(jwtSecret string, tokenString string) (Claims, error) {
 	if !parsed.Valid {
 		return Claims{}, errors.New("Invalid Token")
 	}
-
 	return claims, nil	
 
 }
