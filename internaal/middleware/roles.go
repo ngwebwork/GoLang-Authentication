@@ -14,13 +14,15 @@ func RequireAdmin() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Unauthorized",
 			})
+
 			return
 		}
 		if !strings.EqualFold(role, "admin") {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "This route can only be accessed by admin",
 			})
-			return 
+
+			return
 		}
 	}
 }
